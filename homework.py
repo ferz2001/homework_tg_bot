@@ -4,7 +4,6 @@ import logging
 import requests
 import telegram as tg
 from dotenv import load_dotenv
-from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
@@ -14,13 +13,14 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 logging.basicConfig(
     level=logging.DEBUG,
-    filename='program.log', 
+    filename='program.log',
     format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
     filemode='w'
 )
 
 bot = tg.Bot(token=TELEGRAM_TOKEN)
 logging.debug('Bot is ready')
+
 
 def parse_homework_status(homework):
     homework_name = homework['homework_name']
@@ -39,11 +39,12 @@ def get_homeworks(current_timestamp):
     headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
     response = requests.get(url, headers=headers, params=payload)
-    homework = response.json()['homeworks'][0] 
+    homework = response.json()['homeworks'][0]
     return homework
 
+
 def send_message(message):
-    return bot.send_message(chat_id=CHAT_ID,text=message)
+    return bot.send_message(chat_id=CHAT_ID, text=message)
 
 
 def main():
@@ -58,8 +59,7 @@ def main():
                 send_message(message)
                 logging.info('Сообщение отправлено')
                 homework_status_before = homework_status
-            time.sleep(5 * 60)
-
+            time.sleep(20 * 60)
 
         except Exception as e:
             print(f'Бот упал с ошибкой: {e}')
