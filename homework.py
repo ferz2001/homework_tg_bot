@@ -23,8 +23,9 @@ logging.debug('Bot is ready')
 
 
 def parse_homework_status(homework):
-    homework_name = homework['homework_name']
-    homework_status = homework['status']
+    homeworks = homework['homeworks'][0]
+    homework_name = homeworks['homework_name']
+    homework_status = homeworks['status']
     if homework_status == 'rejected':
         verdict = 'К сожалению, в работе нашлись ошибки.'
     elif homework_status == 'reviewing':
@@ -39,8 +40,7 @@ def get_homeworks(current_timestamp):
     headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
     response = requests.get(url, headers=headers, params=payload)
-    homework = response.json()['homeworks'][0]
-    return homework
+    return response.json()
 
 
 def send_message(message):
@@ -49,15 +49,16 @@ def send_message(message):
 
 def main():
     current_timestamp = 0
-    homework_status_before = get_homeworks(current_timestamp)['status']
+    homework = get_homeworks(current_timestamp)['homeworks'][0]
+    homework_status_before = homework['status']
     while True:
         try:
-            homework_status = get_homeworks(current_timestamp)['status']
+            homework_status = homework['status']
             if homework_status_before != homework_status:
-                homework = get_homeworks()
+                homework = get_homeworks(current_timestamp)
                 message = parse_homework_status(homework)
                 send_message(message)
-                logging.info('Сообщение отправлено')
+                logging.info('Message sent')
                 homework_status_before = homework_status
             time.sleep(20 * 60)
 
