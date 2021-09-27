@@ -12,20 +12,19 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    filename='program.log',
-    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
+    level='DEBUG',
+    filename='mylog.log',
+    format='%(asctime)s, %(name)s, %(levelname)s, %(message)s',
     filemode='w'
 )
-
+logger = logging.getLogger()
 bot = tg.Bot(token=TELEGRAM_TOKEN)
-logging.debug('Bot is ready')
+logger.debug('Bot is ready')
 
 
 def parse_homework_status(homework):
-    homeworks = homework['homeworks'][0]
-    homework_name = homeworks['homework_name']
-    homework_status = homeworks['status']
+    homework_name = homework['homework_name']
+    homework_status = homework['status']
     if homework_status == 'rejected':
         verdict = 'К сожалению, в работе нашлись ошибки.'
     elif homework_status == 'reviewing':
@@ -40,7 +39,8 @@ def get_homeworks(current_timestamp):
     headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
     response = requests.get(url, headers=headers, params=payload)
-    return response.json()
+    homework = response.json()
+    return homework
 
 
 def send_message(message):
@@ -48,24 +48,21 @@ def send_message(message):
 
 
 def main():
-    current_timestamp = 0
-    homework = get_homeworks(current_timestamp)['homeworks'][0]
-    homework_status_before = homework['status']
+    current_timestamp = int(time.time() - 1200)
     while True:
         try:
-            homework_status = homework['status']
-            if homework_status_before != homework_status:
-                homework = get_homeworks(current_timestamp)
-                message = parse_homework_status(homework)
-                send_message(message)
-                logging.info('Message sent')
-                homework_status_before = homework_status
+            homeworks = get_homeworks(current_timestamp)['homeworks']
+            if homeworks != []:
+                for homework in homeworks:
+                    message = parse_homework_status(homework)
+                    send_message(message)
+                    logger.info('Message sent')
             time.sleep(20 * 60)
 
         except Exception as e:
             print(f'Бот упал с ошибкой: {e}')
             send_message(f'Бот упал с ошибкой: {e}')
-            logging.error(e, exc_info=True)
+            logger.error(e, exc_info=True)
             time.sleep(5)
 
 
