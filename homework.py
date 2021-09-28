@@ -4,6 +4,7 @@ import logging
 import requests
 import telegram as tg
 from dotenv import load_dotenv
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
@@ -12,19 +13,32 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 logging.basicConfig(
-    level='DEBUG',
-    filename='mylog.log',
-    format='%(asctime)s, %(name)s, %(levelname)s, %(message)s',
-    filemode='w'
+    level=logging.DEBUG,
+    format='%(asctime)s, %(name)s, %(levelname)s, %(message)s'
 )
-logger = logging.getLogger()
+
+logger = logging.getLogger(__name__)
+logger.setLevel('DEBUG')
+handler = RotatingFileHandler('mylog.log', maxBytes=50000000, backupCount=1)
+logger.addHandler(handler)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+handler.setFormatter(formatter)
+
+
 bot = tg.Bot(token=TELEGRAM_TOKEN)
 logger.debug('Bot is ready')
 
 
 def parse_homework_status(homework):
-    homework_name = homework['homework_name']
-    homework_status = homework['status']
+    try:
+        homework_name = homework['homework_name']
+        homework_status = homework['status']
+    except Exception as e:
+        send_message(f'Бот упал с ошибкой: {e}')
+        logger.error(e, exc_info=True)
+        return 'Неверный ответ сервера.'
     if homework_status == 'rejected':
         verdict = 'К сожалению, в работе нашлись ошибки.'
     elif homework_status == 'reviewing':
@@ -38,7 +52,12 @@ def get_homeworks(current_timestamp):
     url = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
     headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
     payload = {'from_date': current_timestamp}
-    response = requests.get(url, headers=headers, params=payload)
+    try:
+        response = requests.get(url, headers=headers, params=payload)
+    except requests.exceptions.RequestException as e:
+        send_message(f'Бот упал с ошибкой: {e}')
+        logger.error(e, exc_info=True)
+        return 'Ошибка сервера, при получении данных из API'
     homework = response.json()
     return homework
 
@@ -51,16 +70,14 @@ def main():
     current_timestamp = int(time.time() - 1200)
     while True:
         try:
-            homeworks = get_homeworks(current_timestamp)['homeworks']
-            if homeworks != []:
-                for homework in homeworks:
-                    message = parse_homework_status(homework)
-                    send_message(message)
-                    logger.info('Message sent')
+            homework = get_homeworks(current_timestamp)['homeworks']
+            if homework:
+                message = parse_homework_status(homework[0])
+                send_message(message)
+                logger.info('Message sent')
             time.sleep(20 * 60)
 
         except Exception as e:
-            print(f'Бот упал с ошибкой: {e}')
             send_message(f'Бот упал с ошибкой: {e}')
             logger.error(e, exc_info=True)
             time.sleep(5)
