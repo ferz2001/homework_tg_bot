@@ -5,6 +5,8 @@ import requests
 import telegram as tg
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
+from telegram import ReplyKeyboardMarkup
+from telegram.ext import CommandHandler
 
 load_dotenv()
 
@@ -26,20 +28,22 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
-
 bot = tg.Bot(token=TELEGRAM_TOKEN)
 logger.debug('Bot is ready')
 
 
 def parse_homework_status(homework):
-    try:
-        homework_name = homework['homework_name']
-        homework_status = homework['status']
-    except Exception as e:
-        send_message(f'Бот упал с ошибкой: {e}')
-        logger.error(e, exc_info=True)
-        return 'Неверный ответ сервера.'
-    if homework_status == 'rejected':
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
+    if homework_status in (None, '') or homework_name in (None, ''):
+        logger.error(
+            (f'Переменная homework_name - {homework_name}, '
+             f'переменная homework_status - {homework_status}, '
+             f'ошибка в переменной!!!'),
+            exc_info=True
+        )
+        return 'Неверный ответ сервера'
+    elif homework_status == 'rejected':
         verdict = 'К сожалению, в работе нашлись ошибки.'
     elif homework_status == 'reviewing':
         verdict = 'Работа взята в ревью. Ждите вердикта!'
@@ -57,7 +61,7 @@ def get_homeworks(current_timestamp):
     except requests.exceptions.RequestException as e:
         send_message(f'Бот упал с ошибкой: {e}')
         logger.error(e, exc_info=True)
-        return 'Ошибка сервера, при получении данных из API'
+        return {'Ошибка сервера, при получении данных из API'}
     homework = response.json()
     return homework
 
@@ -67,20 +71,19 @@ def send_message(message):
 
 
 def main():
-    current_timestamp = int(time.time() - 1200)
     while True:
         try:
-            homework = get_homeworks(current_timestamp)['homeworks']
-            if homework:
-                message = parse_homework_status(homework[0])
+            current_timestamp = int(time.time() - 200000)
+            homework = get_homeworks(current_timestamp)
+            if homework.get('homeworks'):
+                message = parse_homework_status(homework.get('homeworks')[0])
                 send_message(message)
                 logger.info('Message sent')
             time.sleep(20 * 60)
-
         except Exception as e:
             send_message(f'Бот упал с ошибкой: {e}')
             logger.error(e, exc_info=True)
-            time.sleep(5)
+            time.sleep(30)
 
 
 if __name__ == '__main__':
