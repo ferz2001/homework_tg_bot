@@ -5,8 +5,6 @@ import requests
 import telegram as tg
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import CommandHandler
 
 load_dotenv()
 
