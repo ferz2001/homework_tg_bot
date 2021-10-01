@@ -31,9 +31,10 @@ logger.debug('Bot is ready')
 
 
 def parse_homework_status(homework):
+    current_status = ('rejected', 'reviewing','approved', 'denied')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
-    if homework_status in (None, '') or homework_name in (None, ''):
+    if homework_name in (None, '') or homework_status not in current_status:
         logger.error(
             (f'Переменная homework_name - {homework_name}, '
              f'переменная homework_status - {homework_status}, '
