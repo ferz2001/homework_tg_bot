@@ -31,7 +31,7 @@ logger.debug('Bot is ready')
 
 
 def parse_homework_status(homework):
-    current_status = ('rejected', 'reviewing','approved', 'denied')
+    current_status = ('rejected', 'reviewing', 'approved', 'denied')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_name in (None, '') or homework_status not in current_status:
