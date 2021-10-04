@@ -73,7 +73,7 @@ def main():
     last_homework = None
     while True:
         try:
-            current_timestamp = int(time.time() - 200000)
+            current_timestamp = int(time.time() - 1200)
             homework = get_homeworks(current_timestamp)
             if homework.get('homeworks') and homework != last_homework:
                 message = parse_homework_status(homework.get('homeworks')[0])
