@@ -70,14 +70,16 @@ def send_message(message):
 
 
 def main():
+    last_homework = None
     while True:
         try:
             current_timestamp = int(time.time() - 200000)
             homework = get_homeworks(current_timestamp)
-            if homework.get('homeworks'):
+            if homework.get('homeworks') and homework != last_homework:
                 message = parse_homework_status(homework.get('homeworks')[0])
                 send_message(message)
                 logger.info('Message sent')
+                last_homework = homework
             time.sleep(20 * 60)
         except Exception as e:
             send_message(f'Бот упал с ошибкой: {e}')
