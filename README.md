@@ -1,2 +1,2 @@
-# api_sp1_bot
-api sp1 bot
+# Homework Telegram bot
+Homework Telegram bot
